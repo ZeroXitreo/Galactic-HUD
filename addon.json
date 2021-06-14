@@ -1,7 +1,7 @@
 {
-	"title"		:	"Galactic HUD [DarkRP support]",
-	"type"		:	"Effects",
-	"tags"		:	[ "Roleplay", "Build" ],
+	"title"		:	"Galactic HUD",
+	"type"		:	"Server Content",
+	"tags"		:	[],
 	"ignore"	:
 	[
 		"*.psd",
@@ -10,7 +10,7 @@
 		".git*",
 		"LICENSE",
 		"*.md",
-		"icon.png"
+		"icon.jpg"
 	]
 }
 
