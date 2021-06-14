@@ -4,13 +4,12 @@ component.dependencies = {"theme", "anchor"}
 component.title = "HUD"
 
 component.fpssmooth = 0
+component.iconLicense 	= Material("galactic_hud/license.png", "smooth")
+component.iconWanted 	= Material("galactic_hud/wanted.png", "smooth")
 
 function component:Constructor()
 	galactic.anchor:RegisterAnchor(self, self.DrawLeft, false, true)
 	galactic.anchor:RegisterAnchor(self, self.DrawRight, false, false)
-
-	local iconLicense 	= Material("galactic_hud/license.png", "noclamp smooth")
-	local iconWanted 	= Material("galactic_hud/wanted.png", "noclamp smooth")
 end
 
 function component:HUDShouldDraw(name)
@@ -25,8 +24,124 @@ function component:DrawLeft(anchorX, anchorY)
 	local spacing = galactic.theme.rem * .5
 	local totalW = galactic.theme.rem * 20
 	local totalH = galactic.theme.rem * 7
+
 	local anchorX = anchorX + galactic.theme.rem
 	local anchorY = anchorY - totalH - galactic.theme.rem
+
+	// DarkRP
+	if engine.ActiveGamemode() == "darkrp" then
+		local x = anchorX
+		local y = anchorY - galactic.theme.rem * 2.5
+		local w = totalW
+		local h = galactic.theme.rem * 2.5
+
+		draw.RoundedBox(galactic.theme.round, x, y, w, h, galactic.theme.colors.block)
+
+		if self.currentJob != LocalPlayer():getDarkRPVar("job") then
+			self.currentJob = LocalPlayer():getDarkRPVar("job")
+			timer.Create(LocalPlayer():SteamID() .. "jobtimer", GAMEMODE.Config.paydelay, 0, function() end)
+			timer.Create(LocalPlayer():SteamID() .. "changetimer", GAMEMODE.Config.changejobtime, 0, function()
+				timer.Remove(LocalPlayer():SteamID() .. "changetimer")
+			end)
+		end
+
+		local changeJobTime = 1
+		local changeJobTimeMax = 1
+		if timer.Exists(LocalPlayer():SteamID() .. "changetimer") then
+			changeJobTime = GAMEMODE.Config.changejobtime - timer.TimeLeft(LocalPlayer():SteamID() .. "changetimer")
+			changeJobTimeMax = GAMEMODE.Config.changejobtime
+		end
+
+
+		x = x + galactic.theme.rem * .5
+		y = y + galactic.theme.rem * .5
+		w = galactic.theme.rem * 10
+		h = h - galactic.theme.rem
+
+		self:DrawProcentBar(x, y, w, h,
+							galactic.theme.colors.green,
+							changeJobTime,
+							changeJobTimeMax,
+							LocalPlayer():getDarkRPVar("job"),
+							DarkRP.formatMoney(LocalPlayer():getDarkRPVar("salary")),
+							galactic.theme.colors.greenFaint)
+
+		x = x + w + galactic.theme.rem * .5
+		w = galactic.theme.rem * 4.5
+
+		self:DrawProcentBar(x, y, w, h,
+							galactic.theme.colors.green,
+							GAMEMODE.Config.paydelay - timer.TimeLeft(LocalPlayer():SteamID() .. "jobtimer"),
+							GAMEMODE.Config.paydelay,
+							"",
+							"",
+							galactic.theme.colors.greenFaint,
+							DarkRP.formatMoney(LocalPlayer():getDarkRPVar("money")))
+
+		x = x + w + galactic.theme.rem * .5
+		w = galactic.theme.rem * 1.5
+
+		surface.SetDrawColor(galactic.theme.colors.blockFaint)
+		if LocalPlayer():getDarkRPVar("HasGunlicense") then
+			surface.SetDrawColor(galactic.theme.colors.yellow)
+		end
+		surface.SetMaterial(self.iconLicense)
+		surface.DrawTexturedRect(x, y, w, w)
+
+		x = x + w + galactic.theme.rem * .5
+		w = galactic.theme.rem * 1.5
+
+		surface.SetDrawColor(galactic.theme.colors.blockFaint)
+		if LocalPlayer():getDarkRPVar("wanted") then
+			surface.SetDrawColor(galactic.theme.colors.red)
+		end
+		surface.SetMaterial(self.iconWanted)
+		surface.DrawTexturedRect(x, y, w, w)
+
+		if LocalPlayer():getAgendaTable() then
+			local x = anchorX
+			local y = galactic.theme.rem
+			local w = galactic.theme.rem * 24
+			local h = galactic.theme.rem * 12
+
+			draw.RoundedBox(galactic.theme.round, x, y, w, h, galactic.theme.colors.blockFaint)
+			draw.RoundedBox(galactic.theme.round, x, y, w, galactic.theme.rem * 2.5, galactic.theme.colors.block)
+			draw.SimpleText(
+							LocalPlayer():getAgendaTable().Title,
+							"GalacticDefault",
+							x + w/2,
+							y + galactic.theme.rem * 1.25,
+							galactic.theme.colors.text,
+							TEXT_ALIGN_CENTER,
+							TEXT_ALIGN_CENTER)
+			local agendaText = DarkRP.textWrap((LocalPlayer():getDarkRPVar("agenda") or ""):gsub("//", "\n"):gsub("\\n", "\n"), "GalacticDefault", w - galactic.theme.rem)
+			draw.DrawText(agendaText, "GalacticDefault", x + galactic.theme.rem * .5, y + galactic.theme.rem * 3, galactic.theme.colors.text)
+		end
+
+		if LocalPlayer():getDarkRPVar("Energy") then
+			local x = anchorX + totalW
+			local y = anchorY - galactic.theme.rem * 2.5
+			local w = galactic.theme.rem * 2.5
+			local h = totalH + galactic.theme.rem * 2.5
+
+			draw.RoundedBox(galactic.theme.round, x, y, w, h, galactic.theme.colors.blockFaint)
+
+			x = x + galactic.theme.rem * .5
+			y = y + galactic.theme.rem * .5
+			w = w - galactic.theme.rem
+			h = h - galactic.theme.rem
+
+			draw.RoundedBox(galactic.theme.round, x, y, w, h, galactic.theme.colors.yellowFaint)
+
+			local hunger = LocalPlayer():getDarkRPVar("Energy")
+			if hunger > 100 then
+				hunger = 100
+			end
+
+			draw.RoundedBox(galactic.theme.round, x, y + h - h * hunger / 100, w, h * hunger / 100, galactic.theme.colors.yellow)
+		end
+
+	end
 
 	if not LocalPlayer():Alive() then
 		return totalW, totalH
@@ -156,7 +271,7 @@ function component:GetRootParentOfEntity(entity)
 	return entity
 end
 
-function component:DrawProcentBar(x, y, w, h, colour, value, max, leftString, rightString, bgColour)
+function component:DrawProcentBar(x, y, w, h, colour, value, max, leftString, rightString, bgColour, centerString)
 	if bgColour then
 		draw.RoundedBox(galactic.theme.round, x, y, w, h, bgColour)
 	else
@@ -169,13 +284,21 @@ function component:DrawProcentBar(x, y, w, h, colour, value, max, leftString, ri
 		draw.RoundedBox(galactic.theme.round, x, y, w / max * limitedValue, h, colour)
 	end
 
-	draw.SimpleText(leftString, "GalacticP", x + h / 4, y + h / 2, galactic.theme.colors.text, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+	if centerString then
+		draw.SimpleText(centerString, "GalacticP", x + w / 2, y + h / 2, galactic.theme.colors.text, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+	end
+
+	if leftString then
+		draw.SimpleText(leftString, "GalacticP", x + h / 4, y + h / 2, galactic.theme.colors.text, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+	end
 
 	if not rightString then
 		rightString = value
 	end
 
-	draw.SimpleText(rightString, "GalacticPBold", x + w - h / 4, y + h / 2, galactic.theme.colors.text, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
+	if rightString then
+		draw.SimpleText(rightString, "GalacticPBold", x + w - h / 4, y + h / 2, galactic.theme.colors.text, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
+	end
 end
 
 galactic:Register(component)

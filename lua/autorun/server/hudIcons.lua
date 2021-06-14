@@ -1,2 +1,2 @@
-resource.AddFile("materials/shrun/license.png")
-resource.AddFile("materials/shrun/wanted.png")
+resource.AddFile("materials/galactic_hud/license.png")
+resource.AddFile("materials/galactic_hud/wanted.png")
