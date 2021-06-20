@@ -10,6 +10,9 @@ component.iconWanted 	= Material("galactic_hud/wanted.png", "smooth")
 function component:Constructor()
 	galactic.anchor:RegisterAnchor(self, self.DrawLeft, false, true)
 	galactic.anchor:RegisterAnchor(self, self.DrawRight, false, false)
+	if engine.ActiveGamemode() == "darkrp" then
+		galactic.anchor:RegisterAnchor(self, self.DrawTopLeft, true, true)
+	end
 end
 
 function component:HUDShouldDraw(name)
@@ -20,6 +23,37 @@ function component:HUDShouldDraw(name)
 	end
 end
 
+function component:DrawTopLeft(anchorX, anchorY)
+	local spacing = galactic.theme.rem * .5
+	local totalW = galactic.theme.rem * 24
+	local totalH = galactic.theme.rem * 12
+
+	local anchorX = anchorX + galactic.theme.rem
+	local anchorY = anchorY + galactic.theme.rem
+
+	if LocalPlayer():getAgendaTable() then
+		local x = anchorX
+		local y = anchorY
+		local w = galactic.theme.rem * 24
+		local h = galactic.theme.rem * 12
+
+		draw.RoundedBox(galactic.theme.round, x, y, w, h, galactic.theme.colors.blockFaint)
+		draw.RoundedBox(galactic.theme.round, x, y, w, galactic.theme.rem * 2.5, galactic.theme.colors.block)
+		draw.SimpleText(
+						LocalPlayer():getAgendaTable().Title,
+						"GalacticDefault",
+						x + w/2,
+						y + galactic.theme.rem * 1.25,
+						galactic.theme.colors.text,
+						TEXT_ALIGN_CENTER,
+						TEXT_ALIGN_CENTER)
+		local agendaText = DarkRP.textWrap((LocalPlayer():getDarkRPVar("agenda") or ""):gsub("//", "\n"):gsub("\\n", "\n"), "GalacticDefault", w - galactic.theme.rem)
+		draw.DrawText(agendaText, "GalacticDefault", x + galactic.theme.rem * .5, y + galactic.theme.rem * 3, galactic.theme.colors.text)
+	end
+
+	return totalW + galactic.theme.rem, totalH + galactic.theme.rem
+end
+
 function component:DrawLeft(anchorX, anchorY)
 	local spacing = galactic.theme.rem * .5
 	local totalW = galactic.theme.rem * 20
@@ -27,6 +61,17 @@ function component:DrawLeft(anchorX, anchorY)
 
 	local anchorX = anchorX + galactic.theme.rem
 	local anchorY = anchorY - totalH - galactic.theme.rem
+
+	// Damage taken shake
+	if (self.oldHealth or 0) > LocalPlayer():Health() then
+		self.LeftShake = (self.LeftShake or 0) + spacing * 2
+	end
+	self.oldHealth = LocalPlayer():Health()
+	if self.LeftShake then
+		anchorX = anchorX + math.Rand(-self.LeftShake, self.LeftShake)
+		anchorY = anchorY + math.Rand(-self.LeftShake, self.LeftShake)
+		self.LeftShake = galactic.theme:PredictNextMove(self.LeftShake, 0)
+	end
 
 	// DarkRP
 	if engine.ActiveGamemode() == "darkrp" then
@@ -97,26 +142,6 @@ function component:DrawLeft(anchorX, anchorY)
 		end
 		surface.SetMaterial(self.iconWanted)
 		surface.DrawTexturedRect(x, y, w, w)
-
-		if LocalPlayer():getAgendaTable() then
-			local x = anchorX
-			local y = galactic.theme.rem
-			local w = galactic.theme.rem * 24
-			local h = galactic.theme.rem * 12
-
-			draw.RoundedBox(galactic.theme.round, x, y, w, h, galactic.theme.colors.blockFaint)
-			draw.RoundedBox(galactic.theme.round, x, y, w, galactic.theme.rem * 2.5, galactic.theme.colors.block)
-			draw.SimpleText(
-							LocalPlayer():getAgendaTable().Title,
-							"GalacticDefault",
-							x + w/2,
-							y + galactic.theme.rem * 1.25,
-							galactic.theme.colors.text,
-							TEXT_ALIGN_CENTER,
-							TEXT_ALIGN_CENTER)
-			local agendaText = DarkRP.textWrap((LocalPlayer():getDarkRPVar("agenda") or ""):gsub("//", "\n"):gsub("\\n", "\n"), "GalacticDefault", w - galactic.theme.rem)
-			draw.DrawText(agendaText, "GalacticDefault", x + galactic.theme.rem * .5, y + galactic.theme.rem * 3, galactic.theme.colors.text)
-		end
 
 		if LocalPlayer():getDarkRPVar("Energy") then
 			local x = anchorX + totalW
@@ -208,20 +233,47 @@ function component:DrawLeft(anchorX, anchorY)
 	// // Health
 	self:DrawProcentBar(x, y, w, h, galactic.theme.colors.red, LocalPlayer():Health(), LocalPlayer():GetMaxHealth(), "Health", healthInfo, galactic.theme.colors.redFaint)
 
+
+	if engine.ActiveGamemode() == "darkrp" then
+		return totalW + galactic.theme.rem, totalH + galactic.theme.rem
+	end
+
 	return totalW + galactic.theme.rem, totalH + galactic.theme.rem
 end
 
 function component:DrawRight(anchorX, anchorY)
-	local theme = galactic.theme
 	local spacing = galactic.theme.rem * .5
 	local totalW = galactic.theme.rem * 20
 	local totalH = galactic.theme.rem * 2.5
-	local anchorX = anchorX - totalW - galactic.theme.rem
-	local anchorY = anchorY - totalH - galactic.theme.rem
 
 	if not LocalPlayer():Alive() then
 		return totalW, totalH
 	end
+
+	local anchorX = anchorX - totalW - galactic.theme.rem
+	local anchorY = anchorY - totalH - galactic.theme.rem
+
+
+
+	// Weapon fire shake
+	if LocalPlayer():GetActiveWeapon():IsWeapon() then
+		if self.oldWeapon == LocalPlayer():GetActiveWeapon() && self.oldWeaponClipSize > LocalPlayer():GetActiveWeapon():Clip1() then
+			self.xPush = (self.xPush or 0) + math.Rand(0, spacing * 2)
+			self.yPush = (self.yPush or 0) + math.Rand(0, spacing * 2)
+		end
+		self.oldWeapon = LocalPlayer():GetActiveWeapon()
+		self.oldWeaponClipSize = LocalPlayer():GetActiveWeapon():Clip1()
+	end
+	if self.xPush then
+		anchorX = anchorX + self.xPush
+		self.xPush = galactic.theme:PredictNextMove(self.xPush, 0)
+	end
+	if self.yPush then
+		anchorY = anchorY + self.yPush
+		self.yPush = galactic.theme:PredictNextMove(self.yPush, 0)
+	end
+
+
 
 	// Backgrounds
 	local x = anchorX
