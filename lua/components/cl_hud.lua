@@ -31,6 +31,9 @@ function component:DrawTopLeft(anchorX, anchorY)
 	local anchorX = anchorX + galactic.theme.rem
 	local anchorY = anchorY + galactic.theme.rem
 
+	anchorX = math.Round(anchorX)
+	anchorY = math.Round(anchorY)
+
 	if LocalPlayer():getAgendaTable() then
 		local x = anchorX
 		local y = anchorY
@@ -72,6 +75,9 @@ function component:DrawLeft(anchorX, anchorY)
 		anchorY = anchorY + math.Rand(-self.LeftShake, self.LeftShake)
 		self.LeftShake = galactic.theme:PredictNextMove(self.LeftShake, 0)
 	end
+
+	anchorX = math.Round(anchorX)
+	anchorY = math.Round(anchorY)
 
 	// DarkRP
 	if engine.ActiveGamemode() == "darkrp" then
@@ -273,6 +279,9 @@ function component:DrawRight(anchorX, anchorY)
 		self.yPush = galactic.theme:PredictNextMove(self.yPush, 0)
 	end
 
+	
+	anchorX = math.Round(anchorX)
+	anchorY = math.Round(anchorY)
 
 
 	// Backgrounds
