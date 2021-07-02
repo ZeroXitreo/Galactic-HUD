@@ -7,18 +7,22 @@ component.fpssmooth = 0
 component.iconLicense 	= Material("galactic_hud/license.png", "smooth")
 component.iconWanted 	= Material("galactic_hud/wanted.png", "smooth")
 
+component.gamemodes = {darkrp = true, sandbox = true}
+self.shouldNotDraw = {}
+
 function component:Constructor()
-	galactic.anchor:RegisterAnchor(self, self.DrawLeft, false, true)
-	galactic.anchor:RegisterAnchor(self, self.DrawRight, false, false)
-	if engine.ActiveGamemode() == "darkrp" then
-		galactic.anchor:RegisterAnchor(self, self.DrawTopLeft, true, true)
+	if self.gamemodes[engine.ActiveGamemode()] then
+		galactic.anchor:RegisterAnchor(self, self.DrawLeft, false, true)
+		galactic.anchor:RegisterAnchor(self, self.DrawRight, false, false)
+		if engine.ActiveGamemode() == "darkrp" then
+			galactic.anchor:RegisterAnchor(self, self.DrawTopLeft, true, true)
+		end
+		self.shouldNotDraw = {CHudHealth = true, CHudBattery = true, CHudAmmo = true, CHudSecondaryAmmo = true, DarkRP_HUD = true, DarkRP_Hungermod = true}
 	end
 end
 
 function component:HUDShouldDraw(name)
-	local hideNames = {}
-	hideNames = {"CHudHealth", "CHudBattery", "CHudAmmo", "CHudSecondaryAmmo", "DarkRP_HUD", "DarkRP_Hungermod"}
-	if table.HasValue(hideNames, name) then
+	if self.shouldNotDraw[name] then
 		return false
 	end
 end
