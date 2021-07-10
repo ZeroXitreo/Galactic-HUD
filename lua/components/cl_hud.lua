@@ -8,7 +8,7 @@ component.iconLicense 	= Material("galactic_hud/license.png", "smooth")
 component.iconWanted 	= Material("galactic_hud/wanted.png", "smooth")
 
 component.gamemodes = {darkrp = true, sandbox = true}
-self.shouldNotDraw = {}
+component.shouldNotDraw = {}
 
 function component:Constructor()
 	if self.gamemodes[engine.ActiveGamemode()] then
